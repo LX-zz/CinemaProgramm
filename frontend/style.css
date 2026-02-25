@@ -492,4 +492,128 @@ body {
     padding: 8px 15px;
     border-radius: 20px;
     font-weight: bold;
+}.seat.recommended {
+    background: #4caf50;
+    border: 2px solid #81c784;
+    color: white;
+    animation: pulse 2s infinite;
+    position: relative;
+}
+
+.seat.recommended:hover {
+    background: #66bb6a;
+    transform: scale(1.1);
+}
+
+.seat.recommended::after {
+    content: '✓';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ffd700;
+    color: #000;
+    font-size: 10px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+/* Добавьте в легенду */
+.legend-item .legend-color.recommended {
+    background: #4caf50;
+    border: 2px solid #81c784;
+}
+/* Стили для модального окна предпочтений */
+#preferencesModal .modal-content {
+    background: #1a1a1a;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 0 50px rgba(255, 64, 129, 0.3);
+}
+
+#preferencesModal .form-group {
+    margin-bottom: 25px;
+}
+
+#preferencesModal select {
+    background: #333;
+    color: #fff;
+    border: 2px solid #444;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+#preferencesModal select:focus {
+    outline: none;
+    border-color: #ff4081;
+}
+
+#preferencesModal input[type="checkbox"] {
+    accent-color: #ff4081;
+    transform: scale(1.2);
+}
+
+/* Стили для рекомендуемых мест */
+.seat.recommended {
+    background: #4caf50;
+    border: 2px solid #81c784;
+    color: white;
+    animation: pulse 2s infinite;
+    position: relative;
+}
+
+.seat.recommended:hover {
+    background: #66bb6a;
+    transform: scale(1.1);
+}
+
+.seat.recommended::after {
+    content: '✓';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ffd700;
+    color: #000;
+    font-size: 10px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+/* Цвет для легенды */
+.legend-color.recommended {
+    background: #4caf50;
+    border: 2px solid #81c784;
 }

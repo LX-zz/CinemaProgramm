@@ -1,19 +1,18 @@
-const API_URL = 'http://127.0.0.1:5001/api';
+const API_URL = 'http://localhost:5001/api';
+console.log('API_URL:', API_URL);
+
 let currentUser = null;
 let selectedSeats = new Set();
 let currentSession = null;
 let currentMovie = null;
 
-// Проверка авторизации при загрузке
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Script started');
-    console.log('API_URL:', API_URL);
     await checkAuth();
     await loadMovies();
     setupEventListeners();
 });
 
-// Проверка авторизации
 async function checkAuth() {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
@@ -28,7 +27,6 @@ async function checkAuth() {
     }
 }
 
-// Обновление информации о пользователе
 function updateUserInfo() {
     const userInfo = document.getElementById('userInfo');
     if (userInfo) {
@@ -39,14 +37,12 @@ function updateUserInfo() {
     }
 }
 
-// Выход
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = 'login.html';
 }
 
-// Переключение вкладок
 function showTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -58,28 +54,19 @@ function showTab(tabName) {
     if (tabName === 'profile') loadUserProfile();
 }
 
-// Загрузка фильмов из базы данных
 async function loadMovies() {
     console.log('Loading movies...');
     try {
         const response = await fetch(`${API_URL}/movies`);
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        console.log('Movies response status:', response.status);
         
         const movies = await response.json();
         console.log('Movies received:', movies);
         
         const container = document.getElementById('moviesContainer');
-        if (!container) {
-            console.error('Movies container not found!');
-            return;
-        }
         
         if (movies.length === 0) {
-            container.innerHTML = '<p style="color: #999; text-align: center; grid-column: 1/-1;">Фильмов пока нет в базе данных.</p>';
+            container.innerHTML = '<p style="color: #999; text-align: center;">Фильмов пока нет</p>';
             return;
         }
         
@@ -90,14 +77,9 @@ async function loadMovies() {
         });
     } catch (error) {
         console.error('Error loading movies:', error);
-        const container = document.getElementById('moviesContainer');
-        if (container) {
-            container.innerHTML = `<p style="color: #ff4081; text-align: center; grid-column: 1/-1;">Ошибка загрузки: ${error.message}. Проверьте подключение к бэкенду на порту 5001.</p>`;
-        }
     }
 }
 
-// Создание карточки фильма
 function createMovieCard(movie) {
     const card = document.createElement('div');
     card.className = 'movie-card';
@@ -108,7 +90,7 @@ function createMovieCard(movie) {
         <div class="movie-info">
             <div class="movie-title">${movie.title}</div>
             <div class="movie-genre">${movie.genre}</div>
-            <div class="movie-description">${movie.description || 'Описание отсутствует'}</div>
+            <div class="movie-description">${movie.description || ''}</div>
             <div class="movie-duration">⏱️ ${movie.duration_min} мин</div>
         </div>
     `;
@@ -116,13 +98,16 @@ function createMovieCard(movie) {
     return card;
 }
 
-// Выбор фильма
 async function selectMovie(movie) {
+    console.log('Selected movie:', movie);
     currentMovie = movie;
     
     try {
         const response = await fetch(`${API_URL}/sessions/movie/${movie.id}`);
+        console.log('Sessions response status:', response.status);
+        
         const sessions = await response.json();
+        console.log('Sessions for movie:', sessions);
         
         if (sessions.length === 0) {
             alert('Нет доступных сеансов для этого фильма');
@@ -136,7 +121,6 @@ async function selectMovie(movie) {
     }
 }
 
-// Показать модальное окно с выбором сеанса
 function showSessionModal(movie, sessions) {
     const modal = document.getElementById('seatModal');
     document.getElementById('selectedMovieTitle').textContent = movie.title;
@@ -165,14 +149,12 @@ function showSessionModal(movie, sessions) {
     modal.style.display = 'flex';
 }
 
-// Выбор сеанса
 async function selectSession(sessionId) {
     try {
         const response = await fetch(`${API_URL}/sessions/${sessionId}`);
         const session = await response.json();
         
         currentSession = session;
-        
         await loadSeats(sessionId);
         
         const startTime = new Date(session.start_time);
@@ -187,19 +169,10 @@ async function selectSession(sessionId) {
     }
 }
 
-// Загрузка мест для сеанса
 async function loadSeats(sessionId) {
     try {
         const response = await fetch(`${API_URL}/sessions/${sessionId}/seats`);
         const seats = await response.json();
-        
-        const seatsByRow = {};
-        seats.forEach(seat => {
-            if (!seatsByRow[seat.row_number]) {
-                seatsByRow[seat.row_number] = [];
-            }
-            seatsByRow[seat.row_number].push(seat);
-        });
         
         let seatMapHtml = '';
         for (let row = 1; row <= 10; row++) {
@@ -219,7 +192,6 @@ async function loadSeats(sessionId) {
                     </div>
                 `;
             }
-            
             seatMapHtml += '</div>';
         }
         
@@ -232,7 +204,6 @@ async function loadSeats(sessionId) {
     }
 }
 
-// Выбор/отмена места
 function toggleSeat(seatElement) {
     if (seatElement.classList.contains('taken')) return;
     
@@ -249,7 +220,6 @@ function toggleSeat(seatElement) {
     updateBookingInfo();
 }
 
-// Обновление информации о бронировании
 function updateBookingInfo() {
     const count = selectedSeats.size;
     document.getElementById('selectedSeats').textContent = `Выбрано мест: ${count}`;
@@ -262,7 +232,6 @@ function updateBookingInfo() {
     document.getElementById('bookBtn').disabled = count === 0;
 }
 
-// Бронирование мест
 async function bookSeats() {
     if (selectedSeats.size === 0 || !currentSession) return;
     
@@ -300,12 +269,10 @@ async function bookSeats() {
     }
 }
 
-// Закрыть модальное окно
 function closeSeatModal() {
     document.getElementById('seatModal').style.display = 'none';
 }
 
-// Загрузка бронирований пользователя
 async function loadUserBookings() {
     try {
         const response = await fetch(`${API_URL}/bookings/my`, {
@@ -315,7 +282,6 @@ async function loadUserBookings() {
         });
         
         const bookings = await response.json();
-        
         const container = document.getElementById('bookingsContainer');
         
         if (bookings.length === 0) {
@@ -329,13 +295,13 @@ async function loadUserBookings() {
                 <div class="booking-card">
                     <div class="booking-header">
                         <span class="booking-movie">${booking.movie_title}</span>
-                        <span class="booking-status">${booking.status === 'confirmed' ? '✅ Подтверждено' : '❌ Отменено'}</span>
+                        <span class="booking-status">${booking.status === 'confirmed' ? '✅' : '❌'}</span>
                     </div>
                     <div class="booking-seats">
-                        Места: ${booking.seats.map(s => `${s.row_number}${s.seat_number}`).join(', ')}
+                        Места: ${booking.seats ? booking.seats.map(s => `${s.row_number}${s.seat_number}`).join(', ') : ''}
                     </div>
                     <div class="booking-footer">
-                        <span>${sessionTime.toLocaleDateString()} ${sessionTime.toLocaleTimeString()}</span>
+                        <span>${sessionTime.toLocaleDateString()}</span>
                         <span class="booking-price">${booking.total_price} ₽</span>
                     </div>
                 </div>
@@ -347,7 +313,6 @@ async function loadUserBookings() {
     }
 }
 
-// Загрузка профиля пользователя
 async function loadUserProfile() {
     try {
         const response = await fetch(`${API_URL}/auth/profile`, {
@@ -371,10 +336,6 @@ async function loadUserProfile() {
                 <div class="profile-field">
                     <span class="profile-label">Телефон:</span>
                     <span class="profile-value">${user.phone || 'Не указан'}</span>
-                </div>
-                <div class="profile-field">
-                    <span class="profile-label">Роль:</span>
-                    <span class="profile-value">${user.role === 'admin' ? 'Администратор' : 'Пользователь'}</span>
                 </div>
             </div>
         `;

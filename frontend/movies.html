@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Выбор фильма</title>
+    <title>Бронирование мест</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="header">
         <h1>🎬 КИНОТЕАТР</h1>
-        <div class="user-info" id="userInfo">
-            <!-- Заполняется через JS -->
-        </div>
+        <div class="user-info" id="userInfo"></div>
     </div>
 
-    <!-- Вкладки -->
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('movies')">Фильмы</button>
         <button class="tab-btn" onclick="showTab('bookings')">Мои брони</button>
@@ -23,25 +20,49 @@
 
     <!-- Вкладка с фильмами -->
     <div id="moviesTab" class="tab-content active">
-        <h2 style="color: #ffd700; text-align: center; margin-bottom: 30px;">Афиша</h2>
-        <div class="movies-grid" id="moviesContainer">
-            <!-- Фильмы загрузятся из базы данных -->
-            <div style="color: #999; text-align: center; grid-column: 1/-1;">Загрузка фильмов...</div>
-        </div>
+        <h2 style="color: #ffd700; text-align: center;">Выберите фильм</h2>
+        <div class="movies-grid" id="moviesContainer"></div>
     </div>
 
     <!-- Вкладка с бронями -->
     <div id="bookingsTab" class="tab-content">
-        <h2 style="color: #ffd700; text-align: center; margin-bottom: 30px;">Мои бронирования</h2>
-        <div id="bookingsContainer" style="max-width: 800px; margin: 0 auto;">
-            <!-- Загрузятся брони пользователя -->
-        </div>
+        <h2 style="color: #ffd700; text-align: center;">Мои бронирования</h2>
+        <div id="bookingsContainer"></div>
     </div>
 
     <!-- Вкладка с профилем -->
     <div id="profileTab" class="tab-content">
-        <h2 style="color: #ffd700; text-align: center; margin-bottom: 30px;">Профиль</h2>
-        <div id="profileInfo" style="max-width: 500px; margin: 0 auto;"></div>
+        <h2 style="color: #ffd700; text-align: center;">Профиль</h2>
+        <div id="profileInfo"></div>
+    </div>
+
+    <!-- Модальное окно с предпочтениями -->
+    <div class="modal-overlay" id="preferencesModal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="color: #ffd700; margin-bottom: 20px;">Ваши предпочтения</h2>
+            
+            <div class="form-group">
+                <label style="color: #ffd700; display: block; margin-bottom: 10px;">Предпочитаемое место:</label>
+                <select id="seatPreference" style="width: 100%; padding: 12px; background: #333; color: #fff; border: 2px solid #444; border-radius: 8px;">
+                    <option value="front">Ближе к экрану (первые ряды)</option>
+                    <option value="center" selected>Центр зала (ряды 4-5)</option>
+                    <option value="back">Подальше от экрана (последние ряды)</option>
+                    <option value="aisle">У прохода (крайние места)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="specialNeeds" style="width: 20px; height: 20px;">
+                    <span style="color: #fff;">Специальные места (для слабовидящих) - первые ряды, ближе к выходу</span>
+                </label>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="closePreferencesModal()" style="flex: 1; padding: 15px; background: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Отмена</button>
+                <button onclick="applyPreferences()" style="flex: 1; padding: 15px; background: #ff4081; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Применить</button>
+            </div>
+        </div>
     </div>
 
     <!-- Модальное окно с местами -->
@@ -52,26 +73,21 @@
                 <button class="close-btn" onclick="closeSeatModal()">✕</button>
             </div>
             
-            <div class="session-info" id="sessionInfo">
-                <!-- Информация о сеансе -->
+            <div class="hall-info" id="hallInfo">
+                <!-- Информация о зале -->
             </div>
 
             <div class="screen">ЭКРАН</div>
 
             <div class="seat-map" id="seatMap">
-                <!-- Места загрузятся из базы данных -->
+                <!-- Места загрузятся через JS -->
             </div>
 
             <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color free"></div> Свободно
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color selected"></div> Выбрано
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color taken"></div> Занято
-                </div>
+                <div class="legend-item"><div class="legend-color free"></div> Свободно</div>
+                <div class="legend-item"><div class="legend-color selected"></div> Выбрано</div>
+                <div class="legend-item"><div class="legend-color taken"></div> Занято</div>
+                <div class="legend-item"><div class="legend-color recommended"></div> Рекомендуется</div>
             </div>
 
             <div class="booking-info">
@@ -82,6 +98,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script-simple.js"></script>
 </body>
 </html>

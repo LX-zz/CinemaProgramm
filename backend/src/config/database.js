@@ -6,15 +6,13 @@ let db;
 
 const initDatabase = async () => {
   db = await open({
-    filename: path.join(__dirname, '../../cinema.sqlite'),
+    filename: path.join(__dirname, '../cinema.sqlite'),
     driver: sqlite3.Database
   });
 
   console.log('Connected to SQLite database');
 
-  // Создаем таблицы - ВАЖНО: весь SQL внутри обратных кавычек!
   await db.exec(`
-    -- Пользователи
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -25,7 +23,6 @@ const initDatabase = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Залы
     CREATE TABLE IF NOT EXISTS halls (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -34,7 +31,6 @@ const initDatabase = async () => {
       total_seats INTEGER NOT NULL
     );
 
-    -- Места
     CREATE TABLE IF NOT EXISTS seats (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       hall_id INTEGER,
@@ -45,7 +41,6 @@ const initDatabase = async () => {
       UNIQUE(hall_id, row_number, seat_number)
     );
 
-    -- Фильмы
     CREATE TABLE IF NOT EXISTS movies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -57,7 +52,6 @@ const initDatabase = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Сеансы
     CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       movie_id INTEGER,
@@ -70,7 +64,6 @@ const initDatabase = async () => {
       FOREIGN KEY (hall_id) REFERENCES halls (id) ON DELETE CASCADE
     );
 
-    -- Бронирования
     CREATE TABLE IF NOT EXISTS bookings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
@@ -82,7 +75,6 @@ const initDatabase = async () => {
       FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
     );
 
-    -- Забронированные места
     CREATE TABLE IF NOT EXISTS booked_seats (
       booking_id INTEGER,
       seat_id INTEGER,
@@ -91,7 +83,6 @@ const initDatabase = async () => {
       FOREIGN KEY (seat_id) REFERENCES seats (id) ON DELETE CASCADE
     );
 
-    -- Билеты
     CREATE TABLE IF NOT EXISTS tickets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       booking_id INTEGER UNIQUE,
