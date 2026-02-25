@@ -1,0 +1,495 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  color: #fff;
+  min-height: 100vh;
+}
+
+/* Шапка */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid #ff4081;
+}
+
+.header h1 {
+  color: #ffd700;
+  font-size: 1.8em;
+  margin: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-name {
+  color: #ff4081;
+  font-weight: bold;
+}
+
+.logout-btn {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background: #ff4081;
+}
+
+/* Вкладки */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 30px 0;
+}
+
+.tab-btn {
+  background: #222;
+  color: #999;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1.1em;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid #333;
+}
+
+.tab-btn:hover {
+  background: #333;
+  color: #ffd700;
+}
+
+.tab-btn.active {
+  background: #ff4081;
+  color: white;
+  border-color: #ff4081;
+}
+
+.tab-content {
+  display: none;
+  padding: 20px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Сетка фильмов */
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.movie-card {
+  background: linear-gradient(145deg, #1a1a1a, #222);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+  border: 1px solid #333;
+}
+
+.movie-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 30px rgba(255, 64, 129, 0.3);
+  border-color: #ff4081;
+}
+
+.movie-poster {
+  height: 300px;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3em;
+  color: #666;
+}
+
+.movie-info {
+  padding: 20px;
+}
+
+.movie-title {
+  color: #ffd700;
+  font-size: 1.3em;
+  margin-bottom: 10px;
+}
+
+.movie-genre {
+  color: #ff4081;
+  font-size: 0.9em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.movie-description {
+  color: #999;
+  font-size: 0.9em;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.movie-duration {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Модальное окно с местами */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.modal-content.modal-large {
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #1a1a1a;
+  border-radius: 20px;
+  padding: 30px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #333;
+}
+
+.modal-header h2 {
+  color: #ffd700;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 2em;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.close-btn:hover {
+  color: #ff4081;
+}
+
+.session-info {
+  background: #222;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.session-info-item {
+  color: #ffd700;
+}
+
+.session-info-item span {
+  color: #fff;
+  margin-left: 10px;
+}
+
+/* Карта мест */
+.screen {
+  background: linear-gradient(45deg, #333, #444);
+  color: #ffd700;
+  padding: 15px;
+  text-align: center;
+  margin: 30px 0;
+  border-radius: 50px;
+  letter-spacing: 5px;
+  border: 2px solid #ffd700;
+}
+
+.seat-map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 30px 0;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.row-label {
+  width: 40px;
+  text-align: right;
+  padding-right: 15px;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.seat {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.seat.free {
+  background: #2c3e50;
+  border: 2px solid #34495e;
+  color: #ecf0f1;
+}
+
+.seat.free:hover {
+  background: #3498db;
+  transform: translateY(-3px);
+}
+
+.seat.selected {
+  background: #ff4081;
+  border: 2px solid #ff79b0;
+  color: white;
+}
+
+.seat.taken {
+  background: #1a1a1a;
+  border: 2px solid #333;
+  color: #444;
+  cursor: not-allowed;
+}
+
+/* Легенда */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 30px 0;
+  padding: 20px;
+  background: #222;
+  border-radius: 40px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend-color {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.legend-color.free { background: #2c3e50; border: 2px solid #34495e; }
+.legend-color.selected { background: #ff4081; border: 2px solid #ff79b0; }
+.legend-color.taken { background: #1a1a1a; border: 2px solid #333; }
+
+/* Блок бронирования */
+.booking-info {
+  background: #222;
+  padding: 30px;
+  border-radius: 15px;
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.selected-seats {
+  color: #ffd700;
+  font-size: 1.2em;
+}
+
+.total-price {
+  color: #fff;
+  font-size: 1.3em;
+}
+
+.total-price span {
+  color: #ff4081;
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+.book-btn {
+  background: #ff4081;
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  font-size: 1.2em;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: bold;
+}
+
+.book-btn:hover:not(:disabled) {
+  background: #f50057;
+  transform: scale(1.05);
+}
+
+.book-btn:disabled {
+  background: #333;
+  cursor: not-allowed;
+}
+
+/* Карточки бронирований */
+.booking-card {
+  background: #222;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-left: 5px solid #ff4081;
+}
+
+.booking-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.booking-movie {
+  color: #ffd700;
+  font-size: 1.2em;
+}
+
+.booking-status {
+  color: #4caf50;
+}
+
+.booking-seats {
+  color: #999;
+  margin: 10px 0;
+}
+
+.booking-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+}
+
+.booking-price {
+  color: #ff4081;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+/* Профиль */
+.profile-card {
+  background: #222;
+  border-radius: 15px;
+  padding: 30px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.profile-field {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-bottom: 1px solid #333;
+}
+
+.profile-label {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.profile-value {
+  color: #fff;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .seat {
+    width: 30px;
+    height: 30px;
+    font-size: 0.7em;
+  }
+  
+  .legend {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .booking-info {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+.session-card {
+    background: #222;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid #333;
+}
+
+.session-card:hover {
+    background: #2a2a2a;
+    border-color: #ff4081;
+    transform: translateX(10px);
+}
+
+.session-price {
+    background: #ff4081;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+}
