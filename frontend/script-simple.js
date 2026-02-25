@@ -5,32 +5,76 @@ let currentUser = null;
 let selectedSeats = new Set();
 let currentMovie = null;
 let currentHall = { id: 1, name: 'Зал 1', rows: 8, cols: 12, price: 500 };
+let userBookings = [];
 
 // Предпочтения пользователя
 let userPreferences = {
-    seatPreference: 'center', // 'front', 'center', 'back', 'aisle'
-    specialNeeds: false       // для слабовидящих
+    seatPreference: 'center',
+    specialNeeds: false
 };
+
+// База постеров фильмов
+const moviePosters = {
+    'Сто лет тому вперёд': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/3e3b5b5a-3b5b-4b5b-8b5b-5b5b5b5b5b5b/1920x',
+    'Повелитель ветра': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/4f4f4f4f-4f4f-4f4f-8f4f-4f4f4f4f4f4f/1920x',
+    'Горничная': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/5a5a5a5a-5a5a-5a5a-8a5a-5a5a5a5a5a5a/1920x',
+    'Лёд 3': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/6b6b6b6b-6b6b-6b6b-8b6b-6b6b6b6b6b6b/1920x',
+    'Мастер и Маргарита': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/7c7c7c7c-7c7c-7c7c-8c7c-7c7c7c7c7c7c/1920x',
+    'Воздух': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/8d8d8d8d-8d8d-8d8d-8d8d-8d8d8d8d8d8d/1920x',
+    'Бременские музыканты': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/9e9e9e9e-9e9e-9e9e-8e9e-9e9e9e9e9e9e/1920x',
+    'Холоп 2': 'https://avatars.mds.yandex.net/get-kinopoisk-image/4774061/0f0f0f0f-0f0f-0f0f-8f0f-0f0f0f0f0f0f/1920x'
+};
+
+// Запасные постеры
+const fallbackPosters = [
+    'https://via.placeholder.com/300x450/1a1a1a/ffd700?text=+Сто+лет+тому+вперёд',
+    'https://via.placeholder.com/300x450/1a1a1a/ff4081?text=+Повелитель+ветра',
+    'https://via.placeholder.com/300x450/1a1a1a/4caf50?text=+Горничная',
+    'https://via.placeholder.com/300x450/1a1a1a/2196f3?text=+Лёд+3',
+    'https://via.placeholder.com/300x450/1a1a1a/ff9800?text=+Мастер+и+Маргарита',
+    'https://via.placeholder.com/300x450/1a1a1a/9c27b0?text=+Воздух',
+    'https://via.placeholder.com/300x450/1a1a1a/ff5722?text=+Бременские+музыканты',
+    'https://via.placeholder.com/300x450/1a1a1a/795548?text=+Холоп+2'
+];
+
+function getMoviePoster(movieTitle, index) {
+    return moviePosters[movieTitle] || fallbackPosters[index % fallbackPosters.length];
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Script started');
     await checkAuth();
     await loadMovies();
     loadUserPreferences();
+    loadUserBookingsFromStorage();
     setupEventListeners();
 });
 
-// Загрузка предпочтений пользователя
 function loadUserPreferences() {
     const saved = localStorage.getItem('userPreferences');
     if (saved) {
         userPreferences = JSON.parse(saved);
+        console.log('Загружены предпочтения:', userPreferences);
     }
 }
 
-// Сохранение предпочтений
 function saveUserPreferences() {
     localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+    console.log('Сохранены предпочтения:', userPreferences);
+}
+
+// Загрузка бронирований из localStorage
+function loadUserBookingsFromStorage() {
+    const saved = localStorage.getItem('userBookings');
+    if (saved) {
+        userBookings = JSON.parse(saved);
+        console.log('Загружены бронирования:', userBookings);
+    }
+}
+
+// Сохранение бронирований в localStorage
+function saveUserBookings() {
+    localStorage.setItem('userBookings', JSON.stringify(userBookings));
 }
 
 async function checkAuth() {
@@ -40,8 +84,11 @@ async function checkAuth() {
     if (token && user) {
         currentUser = JSON.parse(user);
         updateUserInfo();
-        await loadUserBookings();
         await loadUserProfile();
+        // Загружаем бронирования при проверке авторизации
+        if (document.getElementById('bookingsTab').classList.contains('active')) {
+            displayUserBookings();
+        }
     } else {
         window.location.href = 'login.html';
     }
@@ -60,6 +107,7 @@ function updateUserInfo() {
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Не удаляем бронирования при выходе
     window.location.href = 'login.html';
 }
 
@@ -67,11 +115,19 @@ function showTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     
-    document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
-    document.getElementById(`${tabName}Tab`).classList.add('active');
+    const tabBtn = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+    if (tabBtn) tabBtn.classList.add('active');
     
-    if (tabName === 'bookings') loadUserBookings();
-    if (tabName === 'profile') loadUserProfile();
+    const tabContent = document.getElementById(`${tabName}Tab`);
+    if (tabContent) tabContent.classList.add('active');
+    
+    // Загружаем соответствующий контент
+    if (tabName === 'bookings') {
+        displayUserBookings();
+    }
+    if (tabName === 'profile') {
+        loadUserProfile();
+    }
 }
 
 async function loadMovies() {
@@ -82,8 +138,8 @@ async function loadMovies() {
         const container = document.getElementById('moviesContainer');
         container.innerHTML = '';
         
-        movies.forEach(movie => {
-            const card = createMovieCard(movie);
+        movies.forEach((movie, index) => {
+            const card = createMovieCard(movie, index);
             container.appendChild(card);
         });
     } catch (error) {
@@ -91,18 +147,26 @@ async function loadMovies() {
     }
 }
 
-function createMovieCard(movie) {
+function createMovieCard(movie, index) {
     const card = document.createElement('div');
     card.className = 'movie-card';
     card.onclick = () => selectMovie(movie);
     
+    const posterUrl = getMoviePoster(movie.title, index);
+    const encodedTitle = encodeURIComponent(movie.title);
+    
     card.innerHTML = `
-        <div class="movie-poster">🎬</div>
+        <div class="movie-poster">
+            <img src="${posterUrl}" 
+                 alt="${movie.title}" 
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450/1a1a1a/ffd700?text=${encodedTitle}'"
+                 style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
         <div class="movie-info">
             <div class="movie-title">${movie.title}</div>
             <div class="movie-genre">${movie.genre}</div>
-            <div class="movie-description">${movie.description || ''}</div>
-            <div class="movie-duration">⏱️ ${movie.duration_min} мин</div>
+            <div class="movie-description">${movie.description || 'Описание отсутствует'}</div>
+            <div class="movie-duration"> ${movie.duration_min} мин</div>
             <div class="movie-price">💰 ${PRICE_PER_SEAT} ₽/место</div>
         </div>
     `;
@@ -110,76 +174,42 @@ function createMovieCard(movie) {
     return card;
 }
 
-async function selectMovie(movie) {
+function selectMovie(movie) {
     currentMovie = movie;
     document.getElementById('selectedMovieTitle').textContent = movie.title;
-    
-    // Показываем окно выбора предпочтений перед залом
     showPreferencesModal();
 }
 
-// Показать модальное окно с предпочтениями
 function showPreferencesModal() {
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.id = 'preferencesModal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 500px;">
-            <h2 style="color: #ffd700; margin-bottom: 20px;">Ваши предпочтения</h2>
-            
-            <div style="margin-bottom: 25px;">
-                <label style="color: #ffd700; display: block; margin-bottom: 10px;">Предпочитаемое место:</label>
-                <select id="seatPreference" style="width: 100%; padding: 12px; background: #333; color: #fff; border: 2px solid #444; border-radius: 8px;">
-                    <option value="front" ${userPreferences.seatPreference === 'front' ? 'selected' : ''}>Ближе к экрану (первые ряды)</option>
-                    <option value="center" ${userPreferences.seatPreference === 'center' ? 'selected' : ''}>Центр зала (ряды 4-5)</option>
-                    <option value="back" ${userPreferences.seatPreference === 'back' ? 'selected' : ''}>Подальше от экрана (последние ряды)</option>
-                    <option value="aisle" ${userPreferences.seatPreference === 'aisle' ? 'selected' : ''}>У прохода (крайние места)</option>
-                </select>
-            </div>
-            
-            <div style="margin-bottom: 25px;">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="specialNeeds" ${userPreferences.specialNeeds ? 'checked' : ''} style="width: 20px; height: 20px;">
-                    <span style="color: #fff;">Специальные места (для слабовидящих/с ограничениями) - первые ряды, ближе к выходу</span>
-                </label>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button onclick="closePreferencesModal()" style="flex: 1; padding: 15px; background: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Отмена</button>
-                <button onclick="applyPreferences()" style="flex: 1; padding: 15px; background: #ff4081; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Применить и выбрать места</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
+    const modal = document.getElementById('preferencesModal');
+    if (modal) {
+        document.getElementById('seatPreference').value = userPreferences.seatPreference;
+        document.getElementById('specialNeeds').checked = userPreferences.specialNeeds;
+        modal.style.display = 'flex';
+    }
 }
 
 function closePreferencesModal() {
     const modal = document.getElementById('preferencesModal');
-    if (modal) modal.remove();
-    closeSeatModal();
+    if (modal) modal.style.display = 'none';
 }
 
 function applyPreferences() {
-    // Сохраняем предпочтения
     userPreferences.seatPreference = document.getElementById('seatPreference').value;
     userPreferences.specialNeeds = document.getElementById('specialNeeds').checked;
     saveUserPreferences();
     
-    // Закрываем окно предпочтений
     closePreferencesModal();
-    
-    // Загружаем зал с учетом предпочтений
     loadHallWithPreferences();
 }
 
 function loadHallWithPreferences() {
     document.getElementById('hallInfo').innerHTML = `
-        <div style="text-align: center; padding: 10px; background: #222; border-radius: 10px;">
-            <h3 style="color: #ffd700;">${currentHall.name}</h3>
+        <div style="text-align: center; padding: 15px; background: #222; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="color: #ffd700; margin-bottom: 10px;">${currentHall.name}</h3>
             <p style="color: #fff;">Цена билета: ${currentHall.price} ₽</p>
-            <p style="color: #ffd700; margin-top: 10px;">
-                🔍 Рекомендация: ${getPreferenceDescription()}
+            <p style="color: #ffd700; margin-top: 10px; padding: 10px; background: #333; border-radius: 8px;">
+                🔍 ${getPreferenceDescription()}
             </p>
         </div>
     `;
@@ -190,15 +220,20 @@ function loadHallWithPreferences() {
 
 function getPreferenceDescription() {
     if (userPreferences.specialNeeds) {
-        return 'Показаны специальные места (первые ряды, у проходов)';
+        return '♿ Специальные места (первые ряды, места 1-3)';
     }
     
     switch(userPreferences.seatPreference) {
-        case 'front': return 'Рекомендуем ряды 1-2 (ближе к экрану)';
-        case 'center': return 'Рекомендуем ряды 4-5 (центр зала)';
-        case 'back': return 'Рекомендуем ряды 7-8 (подальше от экрана)';
-        case 'aisle': return 'Рекомендуем крайние места у проходов';
-        default: return 'Все места доступны';
+        case 'front': 
+            return 'Ближе к экрану: ряды 1-2';
+        case 'center': 
+            return 'Центр зала: ряды 4-5';
+        case 'back': 
+            return 'Подальше от экрана: ряды 7-8';
+        case 'aisle': 
+            return 'У прохода: крайние места (колонки 1 и 12)';
+        default: 
+            return 'Все места доступны';
     }
 }
 
@@ -206,17 +241,34 @@ async function loadSeats(hallId) {
     try {
         let seatMapHtml = '';
         
-        // Определяем рекомендуемые ряды
+        // Определяем рекомендуемые ряды и места
         let recommendedRows = [];
+        let recommendedCols = [];
+        
         if (userPreferences.specialNeeds) {
-            recommendedRows = [1, 2]; // Для слабовидящих - первые ряды
+            recommendedRows = [1, 2];
+            recommendedCols = [1, 2, 3];
         } else {
             switch(userPreferences.seatPreference) {
-                case 'front': recommendedRows = [1, 2]; break;
-                case 'center': recommendedRows = [4, 5]; break;
-                case 'back': recommendedRows = [7, 8]; break;
-                case 'aisle': recommendedRows = [1,2,3,4,5,6,7,8]; break; // все ряды, но места у края
-                default: recommendedRows = [1,2,3,4,5,6,7,8];
+                case 'front': 
+                    recommendedRows = [1, 2];
+                    recommendedCols = [1,2,3,4,5,6,7,8,9,10,11,12];
+                    break;
+                case 'center': 
+                    recommendedRows = [4, 5];
+                    recommendedCols = [1,2,3,4,5,6,7,8,9,10,11,12];
+                    break;
+                case 'back': 
+                    recommendedRows = [7, 8];
+                    recommendedCols = [1,2,3,4,5,6,7,8,9,10,11,12];
+                    break;
+                case 'aisle': 
+                    recommendedRows = [1,2,3,4,5,6,7,8];
+                    recommendedCols = [1, 12];
+                    break;
+                default:
+                    recommendedRows = [1,2,3,4,5,6,7,8];
+                    recommendedCols = [1,2,3,4,5,6,7,8,9,10,11,12];
             }
         }
         
@@ -226,20 +278,18 @@ async function loadSeats(hallId) {
             seatMapHtml += `<div class="row-label">${rowLetter}</div>`;
             
             for (let col = 1; col <= currentHall.cols; col++) {
+                // 20% мест занято случайным образом
                 const isTaken = Math.random() < 0.2;
                 
-                // Определяем, рекомендуется ли это место
                 let isRecommended = false;
-                if (userPreferences.specialNeeds) {
-                    isRecommended = recommendedRows.includes(row) && col <= 3; // первые места у прохода
-                } else if (userPreferences.seatPreference === 'aisle') {
-                    isRecommended = col === 1 || col === currentHall.cols; // крайние места
-                } else {
-                    isRecommended = recommendedRows.includes(row);
+                if (recommendedRows.includes(row) && recommendedCols.includes(col)) {
+                    isRecommended = true;
                 }
                 
-                let status = isTaken ? 'taken' : 'free';
-                if (isRecommended && !isTaken) {
+                let status = 'free';
+                if (isTaken) {
+                    status = 'taken';
+                } else if (isRecommended) {
                     status = 'recommended';
                 }
                 
@@ -249,7 +299,7 @@ async function loadSeats(hallId) {
                          data-col="${col}"
                          data-recommended="${isRecommended}"
                          onclick="toggleSeat(this)"
-                         title="${isRecommended ? '✅ Рекомендуемое место' : ''}">
+                         title="${isRecommended ? '✨ Рекомендуемое место' : ''}">
                         ${rowLetter}${col}
                     </div>
                 `;
@@ -269,7 +319,9 @@ async function loadSeats(hallId) {
 function toggleSeat(seatElement) {
     if (seatElement.classList.contains('taken')) return;
     
-    const seatId = `${seatElement.dataset.row}-${seatElement.dataset.col}`;
+    const row = seatElement.dataset.row;
+    const col = seatElement.dataset.col;
+    const seatId = `${row}-${col}`;
     
     if (selectedSeats.has(seatId)) {
         selectedSeats.delete(seatId);
@@ -277,6 +329,9 @@ function toggleSeat(seatElement) {
     } else {
         selectedSeats.add(seatId);
         seatElement.classList.add('selected');
+        
+        const rowLetter = String.fromCharCode(64 + parseInt(row));
+        console.log(`Выбрано место: ${rowLetter}${col}`);
     }
     
     updateBookingInfo();
@@ -292,7 +347,7 @@ function updateBookingInfo() {
     document.getElementById('bookBtn').disabled = count === 0;
 }
 
-async function bookSeats() {
+function bookSeats() {
     if (selectedSeats.size === 0 || !currentUser) return;
     
     const seatsList = Array.from(selectedSeats).map(seat => {
@@ -300,42 +355,77 @@ async function bookSeats() {
         return `${String.fromCharCode(64 + parseInt(row))}${col}`;
     }).join(', ');
     
-    // Проверяем, были ли выбраны рекомендуемые места
-    const recommendedSelected = Array.from(selectedSeats).filter(seat => {
-        const seatElement = document.querySelector(`[data-row="${seat.split('-')[0]}"][data-col="${seat.split('-')[1]}"]`);
-        return seatElement && seatElement.dataset.recommended === 'true';
-    }).length;
+    // Создаем новое бронирование
+    const newBooking = {
+        id: Date.now(),
+        movieTitle: currentMovie.title,
+        hallName: currentHall.name,
+        seats: seatsList,
+        seatsCount: selectedSeats.size,
+        totalPrice: selectedSeats.size * PRICE_PER_SEAT,
+        date: new Date().toLocaleDateString('ru-RU'),
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        status: 'confirmed'
+    };
     
-    let message = `✅ Бронирование успешно создано!\n\n`;
-    message += `Фильм: ${currentMovie.title}\n`;
-    message += `Зал: ${currentHall.name}\n`;
-    message += `Места: ${seatsList}\n`;
-    message += `Сумма: ${selectedSeats.size * PRICE_PER_SEAT} ₽\n`;
+    // Добавляем в массив бронирований
+    userBookings.push(newBooking);
+    saveUserBookings();
     
-    if (recommendedSelected > 0) {
-        message += `\n✨ Вы выбрали ${recommendedSelected} рекомендованных мест!`;
-    }
+    alert(`Бронирование успешно создано!\n\n🎬 Фильм: ${currentMovie.title}\n🎫 Зал: ${currentHall.name}\n💺 Места: ${seatsList}\n💰 Сумма: ${selectedSeats.size * PRICE_PER_SEAT} ₽`);
     
-    alert(message);
-    
-    // Очищаем выбранные места
     selectedSeats.clear();
     updateBookingInfo();
     closeSeatModal();
+    
+    // Если мы на вкладке бронирований, обновляем отображение
+    if (document.getElementById('bookingsTab').classList.contains('active')) {
+        displayUserBookings();
+    }
 }
 
 function closeSeatModal() {
     document.getElementById('seatModal').style.display = 'none';
 }
 
-async function loadUserBookings() {
-    document.getElementById('bookingsContainer').innerHTML = '<p style="color: #999; text-align: center;">У вас пока нет бронирований</p>';
+// Отображение бронирований пользователя
+function displayUserBookings() {
+    const container = document.getElementById('bookingsContainer');
+    
+    if (!container) return;
+    
+    if (userBookings.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">У вас пока нет бронирований</div>';
+        return;
+    }
+    
+    let html = '';
+    userBookings.forEach(booking => {
+        html += `
+            <div class="booking-card">
+                <div class="booking-header">
+                    <span class="booking-movie">${booking.movieTitle}</span>
+                    <span class="booking-status" style="color: #4caf50;">✅ Подтверждено</span>
+                </div>
+                <div class="booking-seats">
+                    Места: ${booking.seats}
+                </div>
+                <div class="booking-footer">
+                    <span>📅 ${booking.date} ${booking.time}</span>
+                    <span>🎫 ${booking.seatsCount} мест</span>
+                    <span class="booking-price">${booking.totalPrice} ₽</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
 }
 
+// Загрузка профиля пользователя
 async function loadUserProfile() {
     if (!currentUser) return;
     
-    // Получаем описание предпочтений
     let prefText = '';
     if (userPreferences.specialNeeds) {
         prefText = 'Специальные места';
@@ -349,41 +439,48 @@ async function loadUserProfile() {
         }
     }
     
-    document.getElementById('profileInfo').innerHTML = `
-        <div class="profile-card">
-            <div class="profile-field">
-                <span class="profile-label">Имя:</span>
-                <span class="profile-value">${currentUser.name}</span>
+    const profileInfo = document.getElementById('profileInfo');
+    if (profileInfo) {
+        profileInfo.innerHTML = `
+            <div class="profile-card">
+                <div class="profile-field">
+                    <span class="profile-label">Имя:</span>
+                    <span class="profile-value">${currentUser.name}</span>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Email:</span>
+                    <span class="profile-value">${currentUser.email}</span>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Телефон:</span>
+                    <span class="profile-value">${currentUser.phone || 'Не указан'}</span>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Предпочтения:</span>
+                    <span class="profile-value">${prefText}</span>
+                </div>
+                <div class="profile-field">
+                    <span class="profile-label">Всего бронирований:</span>
+                    <span class="profile-value">${userBookings.length}</span>
+                </div>
+                <button onclick="showPreferencesModal()" style="margin-top: 20px; padding: 10px; background: #ff4081; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%;">
+                    Изменить предпочтения
+                </button>
             </div>
-            <div class="profile-field">
-                <span class="profile-label">Email:</span>
-                <span class="profile-value">${currentUser.email}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-label">Телефон:</span>
-                <span class="profile-value">${currentUser.phone || 'Не указан'}</span>
-            </div>
-            <div class="profile-field">
-                <span class="profile-label">Предпочтения:</span>
-                <span class="profile-value">${prefText}</span>
-            </div>
-            <button onclick="showPreferencesModal()" style="margin-top: 20px; padding: 10px; background: #ff4081; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%;">
-                Изменить предпочтения
-            </button>
-        </div>
-    `;
+        `;
+    }
 }
 
 function setupEventListeners() {
     window.onclick = function(event) {
-        const modal = document.getElementById('seatModal');
-        if (event.target === modal) {
+        const seatModal = document.getElementById('seatModal');
+        if (event.target === seatModal) {
             closeSeatModal();
         }
         
         const prefModal = document.getElementById('preferencesModal');
         if (event.target === prefModal) {
-            prefModal.remove();
+            prefModal.style.display = 'none';
         }
     };
 }
